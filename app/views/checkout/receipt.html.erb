@@ -1,0 +1,102 @@
+<%# app/views/checkout/receipt.html.erb %>
+
+<div class="container mx-auto px-4 py-8 max-w-md">
+  <%# On-screen receipt preview styled like a thermal receipt %>
+  <div class="bg-white border rounded-xl shadow-lg p-8 font-mono text-sm" id="receipt-preview">
+    <div class="text-center mb-4">
+      <h2 class="text-xl font-bold"><%= ENV.fetch('STORE_NAME', 'TOKO EMAS SEJAHTERA') %></h2>
+      <p class="text-gray-500 text-xs"><%= ENV.fetch('STORE_ADDRESS', 'Jl. Pasar Baru No. 123') %></p>
+      <p class="text-gray-500 text-xs">Telp: <%= ENV.fetch('STORE_PHONE', '021-5551234') %></p>
+    </div>
+
+    <div class="border-t border-dashed border-gray-300 my-3"></div>
+
+    <div class="flex justify-between text-xs text-gray-500 mb-1">
+      <span>No: <%= @sale.invoice_number %></span>
+      <span><%= @sale.created_at.strftime('%d/%m/%Y %H:%M') %></span>
+    </div>
+    <div class="text-xs text-gray-500 mb-3">Kasir: <%= @sale.cashier_name %></div>
+
+    <div class="border-t border-dashed border-gray-300 my-3"></div>
+
+    <% @sale.sale_items.each do |item| %>
+      <div class="mb-2">
+        <div class="font-bold"><%= item.name %></div>
+        <div class="flex justify-between text-gray-600">
+          <span><%= item.weight %>g | <%= item.karat %> | x<%= item.quantity %></span>
+          <span><%= number_to_currency(item.line_total, unit: 'Rp ', separator: ',', delimiter: '.', precision: 0) %></span>
+        </div>
+      </div>
+    <% end %>
+
+    <div class="border-t border-dashed border-gray-300 my-3"></div>
+
+    <div class="space-y-1">
+      <div class="flex justify-between"><span>Subtotal</span><span><%= number_to_currency(@sale.subtotal, unit: 'Rp ', separator: ',', delimiter: '.', precision: 0) %></span></div>
+      <% if @sale.discount.to_f > 0 %>
+        <div class="flex justify-between text-red-600"><span>Diskon</span><span>- <%= number_to_currency(@sale.discount, unit: 'Rp ', separator: ',', delimiter: '.', precision: 0) %></span></div>
+      <% end %>
+      <% if @sale.tax.to_f > 0 %>
+        <div class="flex justify-between"><span>Pajak</span><span><%= number_to_currency(@sale.tax, unit: 'Rp ', separator: ',', delimiter: '.', precision: 0) %></span></div>
+      <% end %>
+    </div>
+
+    <div class="border-t border-double border-gray-400 my-3"></div>
+
+    <div class="flex justify-between text-lg font-bold">
+      <span>TOTAL</span>
+      <span><%= number_to_currency(@sale.total, unit: 'Rp ', separator: ',', delimiter: '.', precision: 0) %></span>
+    </div>
+
+    <div class="border-t border-dashed border-gray-300 my-3"></div>
+
+    <div class="space-y-1 text-xs">
+      <div class="flex justify-between"><span>Pembayaran</span><span><%= @sale.payment_method.capitalize %></span></div>
+      <div class="flex justify-between"><span>Dibayar</span><span><%= number_to_currency(@sale.paid, unit: 'Rp ', separator: ',', delimiter: '.', precision: 0) %></span></div>
+      <% if @sale.payment_method == 'cash' %>
+        <div class="flex justify-between font-bold"><span>Kembali</span><span><%= number_to_currency(@sale.change, unit: 'Rp ', separator: ',', delimiter: '.', precision: 0) %></span></div>
+      <% end %>
+    </div>
+
+    <div class="text-center mt-6 text-xs text-gray-400">
+      <p>Terima Kasih atas Kunjungan Anda!</p>
+      <p>Barang yang sudah dibeli tidak dapat dikembalikan</p>
+    </div>
+  </div>
+
+  <%# Action Buttons %>
+  <div class="flex gap-3 mt-6">
+    <button id="btn-reprint" class="flex-1 bg-amber-600 text-white py-3 rounded-xl font-bold hover:bg-amber-700 transition">
+      🖨️ Print Ulang
+    </button>
+    <button id="btn-open-drawer" class="bg-gray-200 text-gray-700 px-6 py-3 rounded-xl font-semibold hover:bg-gray-300 transition">
+      💵 Buka Laci
+    </button>
+    <a href="<%= new_checkout_path %>" class="flex-1 bg-emerald-600 text-white py-3 rounded-xl font-bold hover:bg-emerald-700 transition text-center">
+      ➕ Transaksi Baru
+    </a>
+  </div>
+</div>
+
+<%= javascript_include_tag 'printer-manager', defer: true %>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const receiptData = <%= raw @receipt_data.to_json %>;
+  const printer = window.goldposPrinter || new PrinterManager(<%= raw (@printer_config || {}).to_json %>);
+
+  document.getElementById('btn-reprint').addEventListener('click', async () => {
+    if (!printer.isConnected) {
+      try { await printer.connect(); } catch(e) { alert('Gagal terhubung ke printer'); return; }
+    }
+    await printer.printReceipt(receiptData);
+  });
+
+  document.getElementById('btn-open-drawer').addEventListener('click', async () => {
+    if (!printer.isConnected) {
+      try { await printer.connect(); } catch(e) { alert('Gagal terhubung ke printer'); return; }
+    }
+    await printer.openCashDrawer();
+  });
+});
+</script>

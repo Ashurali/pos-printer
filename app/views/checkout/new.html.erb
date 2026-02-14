@@ -1,0 +1,248 @@
+<%# app/views/checkout/new.html.erb %>
+
+<div class="container mx-auto px-4 py-6 max-w-4xl">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold">🛒 Kasir - Toko Emas</h1>
+    <div id="printer-status-badge" class="text-sm px-3 py-1 rounded-full bg-red-100 text-red-700">
+      Printer: Tidak terhubung
+    </div>
+  </div>
+
+  <%= form_with model: @sale, url: checkout_index_path, id: "checkout-form", class: "space-y-6" do |f| %>
+
+    <%# Items Table %>
+    <div class="bg-white border rounded-xl p-6 shadow-sm">
+      <h2 class="text-lg font-semibold mb-4">Daftar Barang</h2>
+
+      <table class="w-full text-sm" id="items-table">
+        <thead>
+          <tr class="border-b text-left text-gray-500">
+            <th class="pb-2 pr-2">Nama Item</th>
+            <th class="pb-2 pr-2 w-20">Berat (g)</th>
+            <th class="pb-2 pr-2 w-20">Karat</th>
+            <th class="pb-2 pr-2 w-28">Harga Satuan</th>
+            <th class="pb-2 pr-2 w-16">Qty</th>
+            <th class="pb-2 w-28 text-right">Subtotal</th>
+            <th class="pb-2 w-10"></th>
+          </tr>
+        </thead>
+        <tbody id="items-body">
+          <%# Template row – cloned by JS %>
+        </tbody>
+      </table>
+
+      <button type="button" id="btn-add-item"
+        class="mt-4 text-amber-700 hover:text-amber-900 font-semibold text-sm">
+        + Tambah Barang
+      </button>
+    </div>
+
+    <%# Payment Section %>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <%# Totals %>
+      <div class="bg-white border rounded-xl p-6 shadow-sm">
+        <h2 class="text-lg font-semibold mb-4">Ringkasan</h2>
+        <div class="space-y-3 text-sm">
+          <div class="flex justify-between"><span class="text-gray-600">Subtotal</span><span id="display-subtotal" class="font-semibold">Rp 0</span></div>
+          <div class="flex justify-between items-center">
+            <span class="text-gray-600">Diskon</span>
+            <%= f.number_field :discount, id: 'input-discount', value: 0, min: 0, step: 1000, class: "w-32 border rounded px-2 py-1 text-right" %>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-gray-600">Pajak (PPN)</span>
+            <%= f.number_field :tax, id: 'input-tax', value: 0, min: 0, step: 1000, class: "w-32 border rounded px-2 py-1 text-right" %>
+          </div>
+          <div class="border-t pt-3 flex justify-between text-lg font-bold">
+            <span>Total</span><span id="display-total">Rp 0</span>
+          </div>
+        </div>
+      </div>
+
+      <%# Payment %>
+      <div class="bg-white border rounded-xl p-6 shadow-sm">
+        <h2 class="text-lg font-semibold mb-4">Pembayaran</h2>
+        <div class="space-y-3 text-sm">
+          <div>
+            <label class="block text-gray-600 mb-1">Metode</label>
+            <%= f.select :payment_method, Sale::PAYMENT_METHODS.map { |m| [m.capitalize, m] },
+                {}, id: 'input-payment-method', class: "w-full border rounded-lg px-3 py-2" %>
+          </div>
+          <div>
+            <label class="block text-gray-600 mb-1">Jumlah Bayar</label>
+            <%= f.number_field :paid, id: 'input-paid', value: 0, min: 0, step: 1000,
+                class: "w-full border rounded-lg px-3 py-2 text-lg font-semibold" %>
+          </div>
+          <div class="flex justify-between text-lg" id="change-row">
+            <span class="text-gray-600">Kembalian</span>
+            <span id="display-change" class="font-bold text-green-700">Rp 0</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%# Customer & Notes (optional) %>
+    <div class="bg-white border rounded-xl p-6 shadow-sm grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div>
+        <label class="block text-sm text-gray-600 mb-1">Nama Pelanggan</label>
+        <%= f.text_field :customer_name, class: "w-full border rounded-lg px-3 py-2", placeholder: "(opsional)" %>
+      </div>
+      <div>
+        <label class="block text-sm text-gray-600 mb-1">No. HP</label>
+        <%= f.text_field :customer_phone, class: "w-full border rounded-lg px-3 py-2", placeholder: "(opsional)" %>
+      </div>
+      <div>
+        <label class="block text-sm text-gray-600 mb-1">Catatan</label>
+        <%= f.text_area :notes, rows: 1, class: "w-full border rounded-lg px-3 py-2", placeholder: "(opsional)" %>
+      </div>
+    </div>
+
+    <%# Action Buttons %>
+    <div class="flex gap-4">
+      <button type="submit" class="flex-1 bg-amber-600 text-white py-3 rounded-xl text-lg font-bold hover:bg-amber-700 transition">
+        💰 Proses Pembayaran
+      </button>
+      <button type="button" id="btn-print-and-pay"
+        class="flex-1 bg-emerald-600 text-white py-3 rounded-xl text-lg font-bold hover:bg-emerald-700 transition">
+        🖨️ Bayar & Print
+      </button>
+    </div>
+  <% end %>
+</div>
+
+<%= javascript_include_tag 'printer-manager', defer: true %>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // ---- Printer Setup ----
+  const printerConfig = <%= raw @printer_config.to_json %>;
+  const printer = new PrinterManager(printerConfig);
+  const badge = document.getElementById('printer-status-badge');
+
+  printer.on('connected', () => {
+    badge.className = 'text-sm px-3 py-1 rounded-full bg-green-100 text-green-700';
+    badge.textContent = 'Printer: ' + printer.deviceName;
+  });
+  printer.on('disconnected', () => {
+    badge.className = 'text-sm px-3 py-1 rounded-full bg-red-100 text-red-700';
+    badge.textContent = 'Printer: Tidak terhubung';
+  });
+
+  // Click badge to connect
+  badge.style.cursor = 'pointer';
+  badge.addEventListener('click', () => {
+    if (!printer.isConnected) printer.connect().catch(() => {});
+  });
+
+  window.goldposPrinter = printer;
+
+  // ---- Dynamic Item Rows ----
+  const itemsBody = document.getElementById('items-body');
+  let itemIndex = 0;
+
+  function createItemRow() {
+    const i = itemIndex++;
+    const prefix = `sale[sale_items_attributes][${i}]`;
+    const tr = document.createElement('tr');
+    tr.className = 'border-b item-row';
+    tr.innerHTML = `
+      <td class="py-2 pr-2"><input type="text" name="${prefix}[name]" class="w-full border rounded px-2 py-1" placeholder="Cincin Emas" required></td>
+      <td class="py-2 pr-2"><input type="number" name="${prefix}[weight]" class="w-full border rounded px-2 py-1 item-weight" step="0.001" min="0" placeholder="5.0"></td>
+      <td class="py-2 pr-2">
+        <select name="${prefix}[karat]" class="w-full border rounded px-2 py-1 item-karat">
+          <option value="24K">24K</option><option value="22K">22K</option>
+          <option value="18K">18K</option><option value="14K">14K</option>
+          <option value="10K">10K</option><option value="9K">9K</option>
+        </select>
+      </td>
+      <td class="py-2 pr-2"><input type="number" name="${prefix}[price]" class="w-full border rounded px-2 py-1 item-price" min="0" step="1000" placeholder="5500000" required></td>
+      <td class="py-2 pr-2"><input type="number" name="${prefix}[quantity]" class="w-full border rounded px-2 py-1 item-qty" min="1" value="1"></td>
+      <td class="py-2 text-right font-semibold item-line-total">Rp 0</td>
+      <td class="py-2 text-center">
+        <button type="button" class="text-red-500 hover:text-red-700 btn-remove-item">&times;</button>
+      </td>
+    `;
+    itemsBody.appendChild(tr);
+    bindRowEvents(tr);
+    recalc();
+  }
+
+  function bindRowEvents(tr) {
+    tr.querySelector('.item-price').addEventListener('input', recalc);
+    tr.querySelector('.item-qty').addEventListener('input', recalc);
+    tr.querySelector('.btn-remove-item').addEventListener('click', () => {
+      if (itemsBody.querySelectorAll('.item-row').length > 1) {
+        tr.remove();
+        recalc();
+      }
+    });
+  }
+
+  document.getElementById('btn-add-item').addEventListener('click', createItemRow);
+
+  // Start with one row
+  createItemRow();
+
+  // ---- Recalculation ----
+  function recalc() {
+    let subtotal = 0;
+    document.querySelectorAll('.item-row').forEach(tr => {
+      const price = parseFloat(tr.querySelector('.item-price')?.value) || 0;
+      const qty = parseInt(tr.querySelector('.item-qty')?.value) || 1;
+      const lineTotal = price * qty;
+      subtotal += lineTotal;
+      tr.querySelector('.item-line-total').textContent = formatRp(lineTotal);
+    });
+
+    const discount = parseFloat(document.getElementById('input-discount').value) || 0;
+    const tax = parseFloat(document.getElementById('input-tax').value) || 0;
+    const total = subtotal - discount + tax;
+    const paid = parseFloat(document.getElementById('input-paid').value) || 0;
+    const change = paid - total;
+
+    document.getElementById('display-subtotal').textContent = formatRp(subtotal);
+    document.getElementById('display-total').textContent = formatRp(total);
+    document.getElementById('display-change').textContent = formatRp(Math.max(0, change));
+  }
+
+  document.getElementById('input-discount').addEventListener('input', recalc);
+  document.getElementById('input-tax').addEventListener('input', recalc);
+  document.getElementById('input-paid').addEventListener('input', recalc);
+  document.getElementById('input-payment-method').addEventListener('change', () => {
+    const method = document.getElementById('input-payment-method').value;
+    document.getElementById('change-row').style.display = method === 'cash' ? 'flex' : 'none';
+  });
+
+  function formatRp(n) {
+    return 'Rp ' + Math.round(n).toLocaleString('id-ID');
+  }
+
+  // ---- Print & Pay ----
+  document.getElementById('btn-print-and-pay').addEventListener('click', async () => {
+    const form = document.getElementById('checkout-form');
+    // Submit form via fetch, get receipt data, then print
+    const formData = new FormData(form);
+    try {
+      const resp = await fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: { 'Accept': 'application/json', 'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content },
+      });
+      if (!resp.ok) {
+        const err = await resp.json();
+        alert('Error: ' + (err.errors || []).join(', '));
+        return;
+      }
+      const receiptData = await resp.json();
+
+      if (printer.isConnected) {
+        await printer.printReceipt(receiptData);
+        await printer.openCashDrawer();
+      }
+      window.location.href = `/checkout/${receiptData.invoiceNo || ''}/receipt`;
+    } catch (e) {
+      console.error(e);
+      alert('Gagal memproses: ' + e.message);
+    }
+  });
+});
+</script>
