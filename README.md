@@ -1,327 +1,413 @@
-# 💎 GoldPOS — Bluetooth Thermal Printer POS for Gold Shops
+# goldpos-printer
 
-A complete Point of Sale module for Indonesian gold shops (toko emas) with Bluetooth thermal printer support, cash drawer control, and framework-agnostic JavaScript.
+Backend-agnostic **Bluetooth thermal/label printer manager** for POS systems.
+
+Connect to BLE receipt/label printers directly from the browser using Web Bluetooth, with zero backend dependencies.
 
 ## Features
 
-- **Web Bluetooth API** — direct browser-to-printer connection, no drivers needed
-- **ESC/POS commands** — full thermal printer control (bold, sizes, alignment, cut, beep)
-- **Gold shop receipts** — item name, weight (gram), karat, IDR currency formatting
-- **Cash drawer kick** — open cash drawer via printer (Pin 2 / Pin 5)
-- **Auto-reconnect** — reconnects automatically if Bluetooth drops
-- **58mm & 80mm paper** — configurable column width
-- **Multiple copies** — print 1-N copies per transaction
-- **Event system** — subscribe to connected, disconnected, printing, error events
-- **Framework-agnostic** — works with Rails, React, Vue, Angular, or vanilla JS
-- **localStorage config** — remembers last paired printer
-- **Production-ready** — error handling, chunked writes, input validation
+- 🖨️ **Dual command mode** — ESC/POS (receipt printers) + TSPL (label printers)
+- 🧪 **Auto-detect wizard** — tests which command language the printer supports
+- 📱 **Device profiles** — save settings per printer (by Bluetooth device ID)
+- 🔄 **Backend-agnostic persistence** — localStorage by default, optional REST API sync
+- 📡 **BLE chunked writes** — with retry logic, method fallback, and busy lock
+- 🎨 **Drop-in Setup UI** — pre-built config panel with detection wizard
+- 📦 **Zero dependencies** — works with any framework or vanilla JS
 
----
+## Install
+
+```bash
+npm install goldpos-printer
+```
+
+Or via CDN:
+
+```html
+<script src="https://unpkg.com/goldpos-printer/dist/printer-manager.umd.js"></script>
+<script src="https://unpkg.com/goldpos-printer/dist/printer-setup.umd.js"></script>
+```
 
 ## Quick Start
 
-### 1. Standalone (No Framework)
+### ESM (Vite, webpack, Rollup)
 
-Open `public/demo.html` in Chrome/Edge. That's it.
+```javascript
+import PrinterManager from 'goldpos-printer';
+
+const printer = new PrinterManager({
+  storeName: 'TOKO EMAS JAYA',
+  paperWidth: 80,
+  debug: true,
+});
+
+await printer.connect();
+await printer.printTest();
+```
+
+### Script Tag (Vanilla, Rails, Laravel Blade)
 
 ```html
-<script src="lib/assets/javascripts/printer-manager.js"></script>
+<script src="https://unpkg.com/goldpos-printer/dist/printer-manager.umd.js"></script>
 <script>
-  const printer = new PrinterManager({ paperWidth: '80mm' });
-
-  document.getElementById('connect').addEventListener('click', async () => {
-    const info = await printer.connect();
-    console.log('Connected:', info.name);
-  });
-
-  document.getElementById('print').addEventListener('click', async () => {
-    await printer.printReceipt({
-      store: { name: 'TOKO EMAS MULIA', address: 'Jl. Kemang No. 10', phone: '021-555' },
-      invoiceNo: 'INV-260214-0001',
-      cashierName: 'Sari',
-      items: [
-        { name: 'Cincin Emas', weight: 5.0, karat: '24K', price: 5500000, qty: 1 },
-      ],
-      subtotal: 5500000,
-      total: 5500000,
-      paid: 6000000,
-      change: 500000,
-      paymentMethod: 'cash',
-    });
-  });
+  const printer = new PrinterManager({ storeName: 'MY SHOP' });
+  document.getElementById('btn').onclick = async () => {
+    await printer.connect();
+    await printer.printTest();
+  };
 </script>
 ```
 
-### 2. Rails Integration
+## Setup UI
 
-```bash
-# Copy JS files to your Rails asset pipeline
-cp lib/assets/javascripts/printer-manager.js app/javascript/
-cp lib/assets/javascripts/printer-setup.js   app/javascript/
+Drop-in configuration panel with detection wizard, device profiles, and all settings:
 
-# Run migrations
-rails db:migrate
+```html
+<div id="printer-setup"></div>
 
-# Add routes (see config/routes.rb)
-# Add controllers, models, views from this repo
+<script src="https://unpkg.com/goldpos-printer/dist/printer-manager.umd.js"></script>
+<script src="https://unpkg.com/goldpos-printer/dist/printer-setup.umd.js"></script>
+<script>
+  const setup = new PrinterSetup('#printer-setup', null, {
+    theme: 'dark',
+    onSave: (config) => console.log('Saved:', config),
+    onDetected: (result) => console.log('Detected:', result.mode),
+  });
+
+  // Access the PrinterManager instance
+  const printer = setup.getPrinterManager();
+</script>
 ```
 
----
+## Print a Receipt
 
-## Project Structure
-
+```javascript
+await printer.printReceipt({
+  invoiceNumber: 'INV-250220-0001',
+  date: new Date(),
+  cashier: 'Admin',
+  customer: 'John Doe',
+  items: [
+    {
+      name: 'Cincin Emas 24K',
+      qty: 1,
+      weight: 5.0,
+      karat: '24K',
+      pricePerGram: 1100000,
+      discount: 0,
+    },
+    {
+      name: 'Gelang Emas 22K',
+      qty: 1,
+      weight: 12.5,
+      karat: '22K',
+      pricePerGram: 950000,
+      discount: 50000,
+    },
+  ],
+  tax: 0,
+  discount: 0,
+  paymentMethod: 'cash',
+  amountPaid: 18000000,
+});
 ```
-pos-gold-shop/
-├── lib/assets/javascripts/
-│   ├── printer-manager.js    # Core Bluetooth printer class
-│   └── printer-setup.js      # UI component for printer setup
-├── app/
-│   ├── models/
-│   │   ├── printer_setting.rb
-│   │   ├── sale.rb
-│   │   └── sale_item.rb
-│   ├── controllers/
-│   │   ├── printer_settings_controller.rb
-│   │   └── checkout_controller.rb
-│   └── views/
-│       ├── printer_settings/show.html.erb
-│       └── checkout/
-│           ├── new.html.erb
-│           └── receipt.html.erb
-├── db/migrate/
-│   ├── 001_create_printer_settings.rb
-│   └── 002_create_sales.rb
-├── config/routes.rb
-├── public/demo.html           # Standalone demo
-├── examples/                  # Framework integration examples
-└── README.md
+
+## Auto-Detection Wizard
+
+Test which command language the printer supports:
+
+```javascript
+// Programmatic detection (without Setup UI)
+const tests = PrinterManager.getDetectionTests();
+// → [{id: "raw", label: "Raw Text", desc: "..."}, {id: "escpos_basic", ...}, ...]
+
+// Run each test
+for (const test of tests) {
+  await printer.runDetectionTest(test.id);
+  // Check physical printout, then save the best result:
+}
+
+// Save result (persists to device profile)
+printer.saveDetectionResult('escpos_full', { paperWidth: 80 });
 ```
 
----
+## Device Profiles & Backend Sync
 
-## API Reference
+### localStorage Only (default)
 
-### `PrinterManager`
+```javascript
+const printer = new PrinterManager();
+// Profiles auto-save to localStorage keyed by BLE device ID.
+// When reconnecting, settings load automatically.
+```
 
-#### Constructor
+### With REST API Sync
 
 ```javascript
 const printer = new PrinterManager({
-  paperWidth: '80mm',        // '58mm' | '80mm'
-  chunkSize: 512,            // bytes per BLE write
-  chunkDelay: 50,            // ms delay between chunks
-  autoReconnect: true,       // auto-reconnect on disconnect
-  maxReconnectAttempts: 3,   // max retries
-  storageKey: 'goldpos_printer', // localStorage key
+  apiEndpoint: '/api/printer_profiles',
+  apiHeaders: {
+    'X-CSRF-Token': document.querySelector('meta[name=csrf-token]').content,
+  },
 });
 ```
 
-#### Static Methods
+**REST API contract** (implement in any backend):
 
-| Method | Returns | Description |
-|--------|---------|-------------|
-| `PrinterManager.isSupported()` | `boolean` | Check Web Bluetooth availability |
-| `PrinterManager.formatCurrency(amount)` | `string` | Format number as "Rp 1.000.000" |
-| `PrinterManager.generateInvoiceNumber(prefix)` | `string` | Generate "INV-260214-0001" |
+| Method | Endpoint                        | Description          |
+|--------|---------------------------------|----------------------|
+| GET    | `/api/printer_profiles`         | List all profiles    |
+| PUT    | `/api/printer_profiles/:id`     | Create/update profile|
+| DELETE | `/api/printer_profiles/:id`     | Delete profile       |
 
-#### Instance Methods
+**Profile payload:**
 
-| Method | Returns | Description |
-|--------|---------|-------------|
-| `connect()` | `Promise<{name, id}>` | Scan + connect to Bluetooth printer |
-| `disconnect()` | `Promise<void>` | Disconnect from printer |
-| `reconnect()` | `Promise<void>` | Reconnect to last device |
-| `printReceipt(data, copies?)` | `Promise<void>` | Print a gold shop receipt |
-| `printText(text)` | `Promise<void>` | Print raw text |
-| `testPrint()` | `Promise<void>` | Print diagnostic test page |
-| `openCashDrawer(pin?)` | `Promise<void>` | Kick cash drawer (pin 2 or 5) |
-| `loadConfig()` | `Object\|null` | Load saved config from localStorage |
-| `clearConfig()` | `void` | Clear saved config |
-| `setPaperWidth(width)` | `void` | Change paper width at runtime |
-
-#### Properties
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `isConnected` | `boolean` | Current connection status |
-| `deviceName` | `string\|null` | Connected device name |
-| `deviceId` | `string\|null` | Connected device ID |
-| `connectionState` | `string` | 'connected' \| 'disconnected' \| 'reconnecting' |
-| `columns` | `number` | Characters per line (32 or 48) |
-
-#### Events
-
-```javascript
-printer.on('connected', (info) => { /* { name, id } */ });
-printer.on('disconnected', (info) => { /* { name } */ });
-printer.on('reconnecting', (data) => { /* { attempt } */ });
-printer.on('reconnected', (data) => { /* { name } */ });
-printer.on('printing', (data) => { /* { type, copies? } */ });
-printer.on('printed', (data) => { /* { type, copies? } */ });
-printer.on('cashDrawerOpened', (data) => { /* { pin } */ });
-printer.on('error', (data) => { /* { type, message, error } */ });
-```
-
-#### Receipt Data Format
-
-```javascript
+```json
 {
-  store: {
-    name: 'TOKO EMAS MULIA',
-    address: 'Jl. Pasar Baru No. 123',
-    phone: '021-5551234',
-    npwp: '12.345.678.9-012.000',  // optional
-  },
-  invoiceNo: 'INV-260214-0001',
-  cashierName: 'Admin',
-  items: [
-    { name: 'Cincin Emas', weight: 5.25, karat: '24K', price: 5775000, qty: 1 },
-    { name: 'Gelang Emas', weight: 10.0, karat: '18K', price: 7500000, qty: 2 },
-  ],
-  subtotal: 20775000,
-  discount: 275000,     // optional
-  tax: 2255000,         // optional
-  total: 22755000,
-  paid: 23000000,
-  change: 245000,
-  paymentMethod: 'cash', // 'cash' | 'debit' | 'credit' | 'transfer'
-  footer: 'Terima Kasih!', // optional
+  "deviceId": "abc123...",
+  "deviceName": "XP-D4601B",
+  "commandMode": "escpos",
+  "paperWidth": 80,
+  "charsPerLine": 48,
+  "autoCut": true,
+  "chunkSize": 80,
+  "chunkDelay": 40,
+  "writeMethod": "writeValue",
+  "updatedAt": "2025-02-20T14:30:00Z"
 }
 ```
 
----
+## Framework Integration
 
-### `PrinterSetup`
+### Ruby on Rails
 
-Self-contained UI widget for printer management.
-
-```javascript
-const setup = new PrinterSetup(document.getElementById('container'), {
-  printerManager: existingPrinter,  // optional, creates new if omitted
-  onConnected: (info) => {},
-  onDisconnected: () => {},
-  onConfigSaved: (config) => {},
-});
-
-setup.getPrinterManager(); // get underlying PrinterManager
-setup.destroy();           // remove from DOM
-```
-
----
-
-## Rails Installation Guide
-
-### Step 1: Copy files
-
-```bash
-# JavaScript (choose your pipeline)
-# For importmap:
-cp lib/assets/javascripts/printer-manager.js app/javascript/
-cp lib/assets/javascripts/printer-setup.js   app/javascript/
-
-# For Sprockets:
-cp lib/assets/javascripts/*.js app/assets/javascripts/
-
-# Models
-cp app/models/printer_setting.rb app/models/
-cp app/models/sale.rb            app/models/
-cp app/models/sale_item.rb       app/models/
-
-# Controllers
-cp app/controllers/printer_settings_controller.rb app/controllers/
-cp app/controllers/checkout_controller.rb          app/controllers/
-
-# Views
-cp -r app/views/printer_settings app/views/
-cp -r app/views/checkout         app/views/
-```
-
-### Step 2: Migrations
-
-```bash
-cp db/migrate/*.rb db/migrate/
-rails db:migrate
-```
-
-### Step 3: Routes
-
-Add to `config/routes.rb`:
+**With Importmaps (Rails 7+):**
 
 ```ruby
-resource :printer_settings, only: [:show, :update] do
-  get :config, on: :member, defaults: { format: :json }
-end
+# config/importmap.rb
+pin "goldpos-printer", to: "https://unpkg.com/goldpos-printer/dist/printer-manager.umd.js"
+```
 
-resources :checkout, only: [:new, :create] do
-  member do
-    get  :receipt
-    post :void
+```javascript
+// app/javascript/controllers/printer_controller.js
+import { Controller } from "@hotwired/stimulus"
+
+export default class extends Controller {
+  static targets = ["setup"]
+
+  connect() {
+    this.printer = new PrinterManager({
+      apiEndpoint: '/api/printer_profiles',
+      apiHeaders: {
+        'X-CSRF-Token': document.querySelector('meta[name=csrf-token]').content,
+      },
+    });
+  }
+
+  async print() {
+    if (!this.printer.isConnected) await this.printer.connect();
+    await this.printer.printReceipt(this.transactionData);
+  }
+}
+```
+
+**With Sprockets (asset pipeline):**
+
+```ruby
+# Copy printer-manager.js to app/assets/javascripts/
+# In application.js:
+//= require printer-manager
+//= require printer-setup
+```
+
+**Rails API Controller:**
+
+```ruby
+# app/controllers/api/printer_profiles_controller.rb
+class Api::PrinterProfilesController < ApplicationController
+  def index
+    profiles = current_user.printer_profiles.index_by(&:device_id)
+    render json: profiles
+  end
+
+  def update
+    profile = current_user.printer_profiles.find_or_initialize_by(device_id: params[:id])
+    profile.assign_attributes(profile_params)
+    profile.save!
+    render json: profile
+  end
+
+  def destroy
+    current_user.printer_profiles.find_by(device_id: params[:id])&.destroy
+    head :no_content
+  end
+
+  private
+
+  def profile_params
+    params.permit(:device_name, :command_mode, :paper_width, :chars_per_line,
+                  :auto_cut, :chunk_size, :chunk_delay, :write_method,
+                  :service_uuid, :char_uuid, :label_width, :label_height,
+                  :detected_via, :updated_at)
   end
 end
 ```
 
-### Step 4: Environment Variables (optional)
-
-```bash
-# .env or config/application.yml
-STORE_NAME=TOKO EMAS SEJAHTERA
-STORE_ADDRESS=Jl. Pasar Baru No. 123, Jakarta
-STORE_PHONE=021-5551234
-STORE_NPWP=12.345.678.9-012.000
+```ruby
+# db/migrate/xxx_create_printer_profiles.rb
+class CreatePrinterProfiles < ActiveRecord::Migration[7.0]
+  def change
+    create_table :printer_profiles do |t|
+      t.references :user, null: false, foreign_key: true
+      t.string :device_id, null: false
+      t.string :device_name
+      t.string :command_mode, default: 'escpos'
+      t.integer :paper_width, default: 80
+      t.integer :chars_per_line, default: 48
+      t.boolean :auto_cut, default: true
+      t.integer :chunk_size, default: 80
+      t.integer :chunk_delay, default: 40
+      t.string :write_method
+      t.string :service_uuid
+      t.string :char_uuid
+      t.integer :label_width
+      t.integer :label_height
+      t.string :detected_via
+      t.timestamps
+    end
+    add_index :printer_profiles, [:user_id, :device_id], unique: true
+  end
+end
 ```
 
----
+### Laravel
 
-## Framework Integration Examples
+**With Vite:**
 
-### React
+```bash
+npm install goldpos-printer
+```
+
+```javascript
+// resources/js/printer.js
+import PrinterManager from 'goldpos-printer';
+
+window.printer = new PrinterManager({
+  apiEndpoint: '/api/printer-profiles',
+  apiHeaders: {
+    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+    'Accept': 'application/json',
+  },
+});
+```
+
+**Blade:**
+
+```html
+<div id="printer-setup"></div>
+
+@vite(['resources/js/printer.js'])
+<script type="module">
+  import PrinterSetup from 'goldpos-printer/setup';
+  new PrinterSetup('#printer-setup', window.printer, { theme: 'dark' });
+</script>
+```
+
+**Laravel Controller + Migration:**
+
+```php
+// app/Http/Controllers/Api/PrinterProfileController.php
+class PrinterProfileController extends Controller
+{
+    public function index() {
+        return auth()->user()->printerProfiles->keyBy('device_id');
+    }
+
+    public function update(Request $request, string $id) {
+        $profile = auth()->user()->printerProfiles()->updateOrCreate(
+            ['device_id' => $id],
+            $request->only([
+                'device_name', 'command_mode', 'paper_width', 'chars_per_line',
+                'auto_cut', 'chunk_size', 'chunk_delay', 'write_method',
+                'service_uuid', 'char_uuid', 'label_width', 'label_height',
+                'detected_via',
+            ])
+        );
+        return response()->json($profile);
+    }
+
+    public function destroy(string $id) {
+        auth()->user()->printerProfiles()->where('device_id', $id)->delete();
+        return response()->noContent();
+    }
+}
+```
+
+```php
+// database/migrations/xxx_create_printer_profiles_table.php
+Schema::create('printer_profiles', function (Blueprint $table) {
+    $table->id();
+    $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+    $table->string('device_id');
+    $table->string('device_name')->nullable();
+    $table->string('command_mode')->default('escpos');
+    $table->integer('paper_width')->default(80);
+    $table->integer('chars_per_line')->default(48);
+    $table->boolean('auto_cut')->default(true);
+    $table->integer('chunk_size')->default(80);
+    $table->integer('chunk_delay')->default(40);
+    $table->string('write_method')->nullable();
+    $table->string('service_uuid')->nullable();
+    $table->string('char_uuid')->nullable();
+    $table->integer('label_width')->nullable();
+    $table->integer('label_height')->nullable();
+    $table->string('detected_via')->nullable();
+    $table->timestamps();
+    $table->unique(['user_id', 'device_id']);
+});
+```
+
+### React / Next.js
 
 ```jsx
-import { useRef, useState, useEffect, useCallback } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import PrinterManager from 'goldpos-printer';
 
-// Import the module (copy printer-manager.js to your src/)
-// Or: import PrinterManager from './printer-manager';
-
-function usePrinter(options = {}) {
-  const printerRef = useRef(null);
-  const [isConnected, setIsConnected] = useState(false);
+export function usePrinter(opts = {}) {
+  const pmRef = useRef(null);
+  const [connected, setConnected] = useState(false);
   const [deviceName, setDeviceName] = useState(null);
 
   useEffect(() => {
-    const pm = new PrinterManager(options);
-    printerRef.current = pm;
-
-    pm.on('connected', (info) => { setIsConnected(true); setDeviceName(info.name); });
-    pm.on('disconnected', () => { setIsConnected(false); setDeviceName(null); });
-
-    return () => { pm.disconnect(); };
+    pmRef.current = new PrinterManager(opts);
+    pmRef.current.on('connected', (d) => { setConnected(true); setDeviceName(d.device); });
+    pmRef.current.on('disconnected', () => { setConnected(false); setDeviceName(null); });
+    return () => pmRef.current?.disconnect();
   }, []);
 
-  const connect = useCallback(async () => {
-    return printerRef.current?.connect();
-  }, []);
-
-  const printReceipt = useCallback(async (data, copies) => {
-    return printerRef.current?.printReceipt(data, copies);
-  }, []);
-
-  const openCashDrawer = useCallback(async () => {
-    return printerRef.current?.openCashDrawer();
-  }, []);
-
-  return { printer: printerRef.current, isConnected, deviceName, connect, printReceipt, openCashDrawer };
+  return {
+    printer: pmRef.current,
+    connected,
+    deviceName,
+    connect: () => pmRef.current?.connect(),
+    disconnect: () => pmRef.current?.disconnect(),
+    printTest: () => pmRef.current?.printTest(),
+    printReceipt: (tx) => pmRef.current?.printReceipt(tx),
+  };
 }
+```
 
-// Usage in component:
-function POSCheckout() {
-  const { isConnected, deviceName, connect, printReceipt, openCashDrawer } = usePrinter({ paperWidth: '80mm' });
+```jsx
+function POSPage() {
+  const { printer, connected, deviceName, connect, printReceipt } = usePrinter({
+    storeName: 'TOKO EMAS',
+    paperWidth: 80,
+  });
 
   return (
     <div>
-      <button onClick={connect}>
-        {isConnected ? `Connected: ${deviceName}` : 'Connect Printer'}
-      </button>
-      <button onClick={() => printReceipt(myReceiptData)} disabled={!isConnected}>
+      <p>{connected ? `Connected: ${deviceName}` : 'Disconnected'}</p>
+      <button onClick={connect}>Connect</button>
+      <button onClick={() => printReceipt(myTransaction)} disabled={!connected}>
         Print Receipt
       </button>
     </div>
@@ -329,155 +415,76 @@ function POSCheckout() {
 }
 ```
 
-### Vue 3
+## Supported Printers
 
-```vue
-<script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+Tested with BLE thermal printers including:
 
-const printer = ref(null);
-const isConnected = ref(false);
-const deviceName = ref(null);
+- **Xprinter** XP-D4601B, XP-365B, XP-420B
+- **GOOJPRT** PT-210, MTP-II
+- **Milestone** MHT-P58A/P80A
+- **MUNBYN** ITPP047
+- Most Chinese BLE printers with ESC/POS or TSPL firmware
 
-onMounted(() => {
-  printer.value = new PrinterManager({ paperWidth: '80mm' });
-  printer.value.on('connected', (info) => { isConnected.value = true; deviceName.value = info.name; });
-  printer.value.on('disconnected', () => { isConnected.value = false; deviceName.value = null; });
-});
+**BLE Services auto-discovered:**
 
-onUnmounted(() => { printer.value?.disconnect(); });
+| UUID (short) | Type |
+|---|---|
+| `18f0` | Nordic UART |
+| `e781` | Custom BLE |
+| `4953` | ISSC / Xprinter |
+| `ff00` | Generic |
+| `fee7` | Tencent/WeChat |
 
-async function connectPrinter() { await printer.value.connect(); }
-async function printReceipt(data) { await printer.value.printReceipt(data); }
-async function openDrawer() { await printer.value.openCashDrawer(); }
-</script>
+## API Reference
 
-<template>
-  <button @click="connectPrinter">
-    {{ isConnected ? `Connected: ${deviceName}` : 'Connect Printer' }}
-  </button>
-  <button @click="printReceipt(receiptData)" :disabled="!isConnected">Print</button>
-  <button @click="openDrawer" :disabled="!isConnected">Open Drawer</button>
-</template>
+### `new PrinterManager(options)`
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `commandMode` | `'auto'\|'escpos'\|'tspl'` | `'auto'` | Command language |
+| `paperWidth` | `number` | `80` | Paper width in mm |
+| `storeName` | `string` | `'TOKO EMAS'` | Store name for receipts |
+| `autoCut` | `boolean` | `true` | Auto-cut after print (ESC/POS) |
+| `chunkSize` | `number` | `80` | BLE write chunk size (bytes) |
+| `chunkDelay` | `number` | `40` | Delay between chunks (ms) |
+| `apiEndpoint` | `string\|null` | `null` | REST API for profile sync |
+| `apiHeaders` | `object` | `{}` | Extra headers for API calls |
+| `debug` | `boolean` | `false` | Console debug logging |
+
+### Methods
+
+| Method | Returns | Description |
+|---|---|---|
+| `connect()` | `Promise<ConnectResult>` | Open BLE device picker and connect |
+| `disconnect()` | `Promise<void>` | Disconnect from printer |
+| `printReceipt(tx)` | `Promise<void>` | Print a formatted receipt |
+| `printTest()` | `Promise<void>` | Print a test page |
+| `printText(text, opts)` | `Promise<void>` | Print custom text |
+| `sendRaw(bytes)` | `Promise<void>` | Send raw bytes |
+| `openCashDrawer()` | `Promise<void>` | Open cash drawer |
+| `runDetectionTest(id)` | `Promise<{testId, uid}>` | Send one detection test |
+| `saveDetectionResult(test, overrides)` | `{mode, deviceId}` | Save detected mode |
+| `saveConfig()` | `void` | Persist settings |
+| `getDiagnostics()` | `Diagnostics` | Connection & config details |
+
+### Events
+
+```javascript
+printer.on('connected', (data) => {});
+printer.on('disconnected', (data) => {});
+printer.on('printStart', (data) => {});
+printer.on('printEnd', (data) => {});
+printer.on('printError', (data) => {});
+printer.on('profileSaved', (data) => {});
+printer.on('error', (data) => {});
 ```
 
-### Angular
+## Browser Support
 
-```typescript
-// printer.service.ts
-import { Injectable, OnDestroy } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+Requires **Web Bluetooth API**: Chrome 56+, Edge 79+, Opera 43+, Chrome Android.
 
-declare const PrinterManager: any;
-
-@Injectable({ providedIn: 'root' })
-export class PrinterService implements OnDestroy {
-  private printer: any;
-  isConnected$ = new BehaviorSubject<boolean>(false);
-  deviceName$ = new BehaviorSubject<string | null>(null);
-
-  constructor() {
-    this.printer = new PrinterManager({ paperWidth: '80mm' });
-    this.printer.on('connected', (info: any) => {
-      this.isConnected$.next(true);
-      this.deviceName$.next(info.name);
-    });
-    this.printer.on('disconnected', () => {
-      this.isConnected$.next(false);
-      this.deviceName$.next(null);
-    });
-  }
-
-  async connect() { return this.printer.connect(); }
-  async printReceipt(data: any, copies = 1) { return this.printer.printReceipt(data, copies); }
-  async openCashDrawer() { return this.printer.openCashDrawer(); }
-  async testPrint() { return this.printer.testPrint(); }
-
-  ngOnDestroy() { this.printer?.disconnect(); }
-}
-```
-
----
-
-## Database Schema
-
-### printer_settings
-
-| Column | Type | Default | Description |
-|--------|------|---------|-------------|
-| id | bigint | auto | Primary key |
-| device_name | string | null | Last connected device name |
-| device_id | string | null | Bluetooth device ID |
-| paper_width | string | '80mm' | '58mm' or '80mm' |
-| auto_reconnect | boolean | true | Auto-reconnect on drop |
-| chunk_size | integer | 512 | Bytes per BLE write |
-| chunk_delay | integer | 50 | Delay between chunks (ms) |
-| cash_drawer_pin | integer | 2 | Cash drawer pin (2 or 5) |
-| meta | jsonb | {} | Additional config |
-| user_id | bigint | null | Optional user FK |
-
-### sales
-
-| Column | Type | Default | Description |
-|--------|------|---------|-------------|
-| id | bigint | auto | Primary key |
-| invoice_number | string | generated | Unique invoice (INV-YYMMDD-NNNN) |
-| cashier_name | string | null | Who processed the sale |
-| customer_name | string | null | Optional customer info |
-| customer_phone | string | null | Optional |
-| payment_method | string | 'cash' | cash/debit/credit/transfer |
-| subtotal | decimal(15,2) | 0 | Sum of line items |
-| discount | decimal(15,2) | 0 | Discount amount |
-| tax | decimal(15,2) | 0 | Tax (PPN) |
-| total | decimal(15,2) | 0 | Final total |
-| paid | decimal(15,2) | 0 | Amount paid |
-| change | decimal(15,2) | 0 | Change returned |
-| status | string | 'completed' | completed/voided/refunded |
-| notes | text | null | Optional notes |
-
-### sale_items
-
-| Column | Type | Description |
-|--------|------|-------------|
-| id | bigint | Primary key |
-| sale_id | bigint | FK to sales |
-| name | string | Item name ("Cincin Emas") |
-| sku | string | Optional SKU |
-| weight | decimal(10,3) | Weight in grams |
-| karat | string | Gold purity (24K, 22K, 18K...) |
-| price_per_gram | decimal(15,2) | Optional price/gram |
-| price | decimal(15,2) | Unit price |
-| quantity | integer | Default 1 |
-| line_total | decimal(15,2) | price × quantity |
-
----
-
-## Browser Compatibility
-
-Web Bluetooth API requires:
-- **Chrome 56+** (Windows, macOS, Linux, Android)
-- **Edge 79+**
-- **Opera 43+**
-- **Chrome on Android**
-
-Not supported: Safari (iOS/macOS), Firefox.
-
-For production iOS support, consider a companion native app or Capacitor plugin.
-
----
-
-## Tested Printers
-
-Works with most ESC/POS Bluetooth thermal printers:
-- EPSON TM-series (with Bluetooth adapter)
-- Xprinter XP-series
-- GOOJPRT PT-series
-- RPP02N / RPP300
-- MHT-P8001
-- Generic 58mm/80mm Bluetooth printers from Tokopedia/Shopee
-
----
+Not supported: Firefox, Safari (as of 2025).
 
 ## License
 
-MIT — free for commercial and personal use.
+MIT

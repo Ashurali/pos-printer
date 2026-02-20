@@ -1,0 +1,61 @@
+{
+  "name": "goldpos-printer",
+  "version": "3.0.0",
+  "description": "Backend-agnostic Bluetooth thermal/label printer manager for POS systems. Supports ESC/POS and TSPL with auto-detection, device profiles, and BLE chunked writes.",
+  "keywords": [
+    "bluetooth",
+    "printer",
+    "thermal",
+    "pos",
+    "escpos",
+    "tspl",
+    "receipt",
+    "label",
+    "web-bluetooth",
+    "ble",
+    "xprinter",
+    "gold-shop"
+  ],
+  "author": "GoldPOS",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/YOUR_USERNAME/goldpos-printer.git"
+  },
+  "homepage": "https://github.com/YOUR_USERNAME/goldpos-printer#readme",
+  "bugs": {
+    "url": "https://github.com/YOUR_USERNAME/goldpos-printer/issues"
+  },
+  "main": "dist/printer-manager.umd.js",
+  "module": "dist/printer-manager.esm.js",
+  "browser": "dist/printer-manager.umd.js",
+  "types": "dist/printer-manager.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/printer-manager.esm.js",
+      "require": "./dist/printer-manager.umd.js",
+      "default": "./dist/printer-manager.umd.js"
+    },
+    "./setup": {
+      "import": "./dist/printer-setup.esm.js",
+      "require": "./dist/printer-setup.umd.js",
+      "default": "./dist/printer-setup.umd.js"
+    }
+  },
+  "files": [
+    "dist/",
+    "src/",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "node scripts/build.js",
+    "prepublishOnly": "npm run build"
+  },
+  "devDependencies": {
+    "esbuild": "^0.20.2"
+  },
+  "engines": {
+    "node": ">=14"
+  }
+}
