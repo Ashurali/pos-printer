@@ -1,9 +1,16 @@
 // ESM build of printer-manager — auto-generated from UMD source
-// Import: import PrinterManager from 'ble-pos-printer/printer-manager';
+// Import: import PrinterManager from 'ble-pos-printer';
+
+const _esmModule = { exports: {} };
+const _esmDefine = undefined;
+
+(function() {
+  const module = _esmModule;
+  const define = _esmDefine;
 
 /**
  * ============================================================================
- * BLE POS Printer Manager v3.0.1
+ * BLE POS Printer Manager v3.0.2
  * ============================================================================
  * Backend-agnostic Bluetooth thermal printer manager.
  * Features:
@@ -990,6 +997,6 @@
 });
 
 
-// ESM default export — works because UMD assigns to root (globalThis)
-const _export = (typeof self !== 'undefined' ? self : globalThis).PrinterManager;
-export default _export;
+})();
+
+export default _esmModule.exports;

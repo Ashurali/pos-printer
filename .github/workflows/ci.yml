@@ -1,0 +1,97 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18, 20, 22]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Run tests
+        run: npm test
+
+      - name: Verify dist files exist
+        run: |
+          test -f dist/printer-manager.umd.js
+          test -f dist/printer-manager.esm.js
+          test -f dist/printer-manager.min.js
+          test -f dist/printer-manager.d.ts
+          test -f dist/printer-setup.umd.js
+          test -f dist/printer-setup.esm.js
+          test -f dist/printer-setup.min.js
+          test -f dist/printer-setup.d.ts
+          test -f dist/index.esm.js
+          echo "✅ All dist files present"
+
+      - name: Verify ESM export pattern
+        run: |
+          if grep -q "globalThis).PrinterManager" dist/printer-manager.esm.js; then
+            echo "❌ ESM still uses broken globalThis pattern!"
+            exit 1
+          fi
+          if grep -q "_esmModule.exports" dist/printer-manager.esm.js; then
+            echo "✅ ESM uses correct module.exports capture"
+          else
+            echo "❌ ESM missing _esmModule.exports pattern"
+            exit 1
+          fi
+
+  # Build the demo app against local library to catch integration issues
+  build-demo:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Build library
+        run: |
+          npm ci
+          npm run build
+
+      - name: Link local library to demo
+        run: |
+          npm link
+          cd examples
+          npm install
+          npm link ble-pos-printer
+
+      - name: Build demo
+        working-directory: examples
+        run: npm run build
+
+      - name: Verify demo build
+        run: |
+          test -f examples/dist/index.html
+          # Check the bundle doesn't contain the broken globalThis pattern
+          if grep -rq "globalThis).PrinterManager" examples/dist/; then
+            echo "❌ Demo bundle still has broken ESM export!"
+            exit 1
+          fi
+          echo "✅ Demo builds successfully with local library"

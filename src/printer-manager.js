@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * BLE POS Printer Manager v3.0.1
+ * BLE POS Printer Manager v3.0.2
  * ============================================================================
  * Backend-agnostic Bluetooth thermal printer manager.
  * Features:

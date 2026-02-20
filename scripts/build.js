@@ -64,16 +64,26 @@ console.log("\n🎉 Build complete!\n");
 // ─── Helpers ───
 
 function createESM(name, umdSource) {
-  // The UMD source uses: (function(root, factory) { ... })(self, function() { ... return CLASS; });
-  // We extract the factory body and wrap it as ESM.
+  const className = name === 'printer-manager' ? 'PrinterManager' : 'PrinterSetup';
+  // Wrap UMD so it hits the CJS branch (module.exports = factory()),
+  // capturing the return value without relying on global scope.
+  // Bundlers like Vite/Rollup run code in isolated module scope where
+  // the UMD's `root.X = factory()` never sets a reachable global.
   return `// ESM build of ${name} — auto-generated from UMD source
-// Import: import PrinterManager from 'ble-pos-printer/${name}';
+// Import: import ${className} from 'ble-pos-printer';
+
+const _esmModule = { exports: {} };
+const _esmDefine = undefined;
+
+(function() {
+  const module = _esmModule;
+  const define = _esmDefine;
 
 ${umdSource}
 
-// ESM default export — works because UMD assigns to root (globalThis)
-const _export = (typeof self !== 'undefined' ? self : globalThis).${name === 'printer-manager' ? 'PrinterManager' : 'PrinterSetup'};
-export default _export;
+})();
+
+export default _esmModule.exports;
 `;
 }
 

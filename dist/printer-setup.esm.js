@@ -1,5 +1,12 @@
 // ESM build of printer-setup — auto-generated from UMD source
-// Import: import PrinterManager from 'ble-pos-printer/printer-setup';
+// Import: import PrinterSetup from 'ble-pos-printer';
+
+const _esmModule = { exports: {} };
+const _esmDefine = undefined;
+
+(function() {
+  const module = _esmModule;
+  const define = _esmDefine;
 
 /**
  * BLEPOS Printer Setup UI v2.0.0 — Detection wizard + device profiles
@@ -479,6 +486,6 @@ return PrinterSetup;
 });
 
 
-// ESM default export — works because UMD assigns to root (globalThis)
-const _export = (typeof self !== 'undefined' ? self : globalThis).PrinterSetup;
-export default _export;
+})();
+
+export default _esmModule.exports;

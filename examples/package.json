@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "ble-pos-printer": "^3.0.0"
+    "ble-pos-printer": "^3.0.2"
   },
   "devDependencies": {
     "vite": "^5.4.0"

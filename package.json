@@ -1,6 +1,6 @@
 {
   "name": "ble-pos-printer",
-  "version": "3.0.1",
+  "version": "3.0.2",
   "description": "Backend-agnostic Bluetooth thermal/label printer manager for POS systems. Supports ESC/POS and TSPL with auto-detection, device profiles, and BLE chunked writes.",
   "keywords": [
     "bluetooth",
@@ -50,7 +50,10 @@
   ],
   "scripts": {
     "build": "node scripts/build.js",
-    "prepublishOnly": "npm run build"
+    "test": "node --test test/printer-manager.test.js && node --test test/esm-import.test.mjs",
+    "test:cjs": "node --test test/printer-manager.test.js",
+    "test:esm": "node --test test/esm-import.test.mjs",
+    "prepublishOnly": "npm run build && npm test"
   },
   "devDependencies": {
     "esbuild": "^0.20.2"
