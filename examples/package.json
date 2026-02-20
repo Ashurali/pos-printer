@@ -1,0 +1,17 @@
+{
+  "name": "ble-pos-printer-demo",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "ble-pos-printer": "^3.0.0"
+  },
+  "devDependencies": {
+    "vite": "^5.4.0"
+  }
+}

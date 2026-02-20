@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ble-pos-printer — Bluetooth Thermal Printer SDK</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🖨️</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <!-- HERO -->
+  <header class="hero">
+    <div class="hero__bg"></div>
+    <div class="container">
+      <div class="hero__badge">v3.0 · MIT · 0 deps</div>
+      <h1 class="hero__title">ble-pos-printer</h1>
+      <p class="hero__sub">Browser-native Bluetooth thermal printer SDK.<br/>ESC/POS + TSPL · Auto-detect · Device Profiles · Zero Backend.</p>
+      <div class="hero__actions">
+        <button class="btn btn--gold btn--lg" id="hero-connect">
+          <span class="btn__icon">📡</span> Connect Printer
+        </button>
+        <a href="https://www.npmjs.com/package/ble-pos-printer" target="_blank" class="btn btn--ghost btn--lg">
+          <span class="btn__icon">📦</span> npm install
+        </a>
+        <a href="https://github.com/Ashurali/pos-printer" target="_blank" class="btn btn--ghost btn--lg">
+          <span class="btn__icon">⭐</span> GitHub
+        </a>
+      </div>
+      <div class="hero__install">
+        <code>npm install ble-pos-printer</code>
+        <button class="copy-btn" data-copy="npm install ble-pos-printer">Copy</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- STATUS BAR (sticky) -->
+  <div class="status-bar" id="status-bar">
+    <div class="container status-bar__inner">
+      <div class="status-bar__left">
+        <span class="status-dot" id="status-dot"></span>
+        <span id="status-text">No printer connected</span>
+        <span class="status-mode" id="status-mode"></span>
+      </div>
+      <div class="status-bar__right">
+        <button class="btn btn--sm btn--gold" id="bar-connect">Connect</button>
+        <button class="btn btn--sm btn--red" id="bar-disconnect" disabled>Disconnect</button>
+      </div>
+    </div>
+  </div>
+
+  <main class="container">
+    <!-- NAV TABS -->
+    <nav class="tabs" id="tabs">
+      <button class="tab tab--active" data-tab="detect">🧪 Detect</button>
+      <button class="tab" data-tab="invoice">📄 Invoice</button>
+      <button class="tab" data-tab="config">⚙️ Config</button>
+      <button class="tab" data-tab="devices">📱 Devices</button>
+      <button class="tab" data-tab="tools">🛠️ Tools</button>
+      <button class="tab" data-tab="docs">📖 Docs</button>
+    </nav>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- TAB: DETECT -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <section class="panel" id="panel-detect">
+      <div class="panel__header">
+        <h2>Printer Detection Wizard</h2>
+        <p>Sends test payloads in different command languages. Check which ones print correctly on paper, then save the result. The library remembers settings per device.</p>
+      </div>
+
+      <button class="btn btn--gold btn--full" id="btn-detect" disabled>
+        ▶️ Run All Detection Tests
+      </button>
+
+      <div id="detect-tests" class="detect-grid"></div>
+
+      <div id="detect-save" class="detect-save" style="display:none">
+        <p>Check the tests that printed <strong>correctly</strong> on paper, then save:</p>
+        <button class="btn btn--green btn--full" id="btn-detect-save">💾 Save Detection Result</button>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- TAB: INVOICE -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <section class="panel" id="panel-invoice" style="display:none">
+      <div class="panel__header">
+        <h2>Invoice Builder</h2>
+        <p>Build and print a full receipt. Demonstrates <code>printReceipt()</code> with all formatting features.</p>
+      </div>
+
+      <div class="invoice-layout">
+        <!-- Left: Form -->
+        <div class="invoice-form">
+          <div class="card">
+            <h3 class="card__title">Store Header</h3>
+            <div class="field">
+              <label>Store Name</label>
+              <input type="text" id="inv-store" value="TOKO EMAS JAYA" />
+            </div>
+            <div class="row">
+              <div class="field"><label>Address</label><input type="text" id="inv-addr" value="Jl. Pasar Baru No. 1" /></div>
+              <div class="field"><label>Phone</label><input type="text" id="inv-phone" value="021-1234567" /></div>
+            </div>
+            <div class="field">
+              <label>Footer Text</label>
+              <input type="text" id="inv-footer" value="Terima Kasih atas Kunjungan Anda" />
+            </div>
+          </div>
+
+          <div class="card">
+            <h3 class="card__title">Transaction Info</h3>
+            <div class="row">
+              <div class="field"><label>Invoice #</label><input type="text" id="inv-number" placeholder="Auto-generate" /></div>
+              <div class="field"><label>Cashier</label><input type="text" id="inv-cashier" value="Admin" /></div>
+            </div>
+            <div class="field"><label>Customer</label><input type="text" id="inv-customer" placeholder="Optional" /></div>
+          </div>
+
+          <div class="card">
+            <h3 class="card__title">Items</h3>
+            <div id="inv-items"></div>
+            <button class="btn btn--outline btn--full" id="btn-add-item">+ Add Item</button>
+          </div>
+
+          <div class="card">
+            <h3 class="card__title">Payment</h3>
+            <div class="row">
+              <div class="field">
+                <label>Method</label>
+                <select id="inv-payment">
+                  <option value="cash">Tunai (Cash)</option>
+                  <option value="debit">Kartu Debit</option>
+                  <option value="credit">Kartu Kredit</option>
+                  <option value="transfer">Transfer Bank</option>
+                </select>
+              </div>
+              <div class="field" id="inv-paid-wrap">
+                <label>Amount Paid</label>
+                <input type="number" id="inv-paid" placeholder="0" />
+              </div>
+            </div>
+            <div class="row">
+              <div class="field"><label>Overall Discount</label><input type="number" id="inv-discount" value="0" /></div>
+              <div class="field"><label>Tax %</label><input type="number" id="inv-tax" value="0" step="0.1" /></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Preview + Print -->
+        <div class="invoice-preview-col">
+          <div class="card receipt-preview" id="receipt-preview">
+            <div class="receipt-paper" id="receipt-paper"></div>
+          </div>
+          <div class="row" style="margin-top:12px">
+            <button class="btn btn--gold btn--full" id="btn-print-receipt" disabled>🖨️ Print Receipt</button>
+            <select id="inv-copies" style="width:80px">
+              <option value="1">1x</option>
+              <option value="2">2x</option>
+              <option value="3">3x</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- TAB: CONFIG -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <section class="panel" id="panel-config" style="display:none">
+      <div class="panel__header">
+        <h2>Printer Configuration</h2>
+        <p>All settings persist to localStorage and sync to device profiles automatically.</p>
+      </div>
+
+      <div class="config-grid">
+        <div class="card">
+          <h3 class="card__title">Print Settings</h3>
+          <div class="row">
+            <div class="field">
+              <label>Command Mode</label>
+              <select id="cfg-mode">
+                <option value="auto">Auto (detect)</option>
+                <option value="escpos">ESC/POS (receipt)</option>
+                <option value="tspl">TSPL (label)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Paper Width</label>
+              <select id="cfg-paper">
+                <option value="58">58mm</option>
+                <option value="72">72mm</option>
+                <option value="80" selected>80mm</option>
+                <option value="100">100mm</option>
+              </select>
+            </div>
+          </div>
+          <div class="row">
+            <label class="check"><input type="checkbox" id="cfg-autocut" checked /> Auto-cut paper</label>
+            <label class="check"><input type="checkbox" id="cfg-drawer" /> Open drawer on print</label>
+          </div>
+          <div class="field">
+            <label>Cash Drawer Pin</label>
+            <select id="cfg-pin"><option value="2">Pin 2</option><option value="5">Pin 5</option></select>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="card__title">TSPL Label Settings</h3>
+          <div class="row">
+            <div class="field"><label>Label Width (mm)</label><input type="number" id="cfg-lw" value="100" /></div>
+            <div class="field"><label>Label Height (mm)</label><input type="number" id="cfg-lh" value="150" /></div>
+            <div class="field"><label>Density (1-15)</label><input type="number" id="cfg-density" value="8" min="1" max="15" /></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="card__title">BLE Connection</h3>
+          <div class="row">
+            <div class="field"><label>Chunk Size (bytes)</label><input type="number" id="cfg-chunk" value="80" /></div>
+            <div class="field"><label>Chunk Delay (ms)</label><input type="number" id="cfg-delay" value="40" /></div>
+          </div>
+          <div class="row">
+            <label class="check"><input type="checkbox" id="cfg-reconnect" checked /> Auto-reconnect</label>
+            <label class="check"><input type="checkbox" id="cfg-debug" /> Debug logging</label>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="card__title">Backend Sync (Optional)</h3>
+          <div class="field">
+            <label>REST API Endpoint</label>
+            <input type="text" id="cfg-api" placeholder="/api/printer_profiles" />
+          </div>
+          <p class="hint">Leave empty for localStorage-only persistence. Set to sync profiles to your backend.</p>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:16px">
+        <button class="btn btn--green" id="btn-save-cfg">💾 Save All Settings</button>
+        <button class="btn btn--outline" id="btn-reset-cfg">🔄 Reset to Defaults</button>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- TAB: DEVICES -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <section class="panel" id="panel-devices" style="display:none">
+      <div class="panel__header">
+        <h2>Saved Device Profiles</h2>
+        <p>Each Bluetooth device stores its own configuration (command mode, paper width, chunk size, etc). Profiles are keyed by BLE device ID and auto-load on reconnect.</p>
+      </div>
+      <div id="devices-list"></div>
+      <div id="devices-empty" class="empty-state">
+        <span class="empty-state__icon">📱</span>
+        <p>No saved devices yet. Connect a printer and run detection to create a profile.</p>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- TAB: TOOLS -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <section class="panel" id="panel-tools" style="display:none">
+      <div class="panel__header">
+        <h2>Printer Tools</h2>
+        <p>Test individual library features.</p>
+      </div>
+
+      <div class="tools-grid">
+        <div class="card tool-card">
+          <h3>🖨️ Test Print</h3>
+          <p>Prints a diagnostic page with device info, settings, and formatting test.</p>
+          <button class="btn btn--gold btn--full" id="btn-test-print" disabled>Print Test Page</button>
+        </div>
+
+        <div class="card tool-card">
+          <h3>📝 Print Custom Text</h3>
+          <textarea id="tool-text" rows="3" placeholder="Type anything to print..."></textarea>
+          <div class="row" style="margin-top:8px">
+            <select id="tool-align"><option value="left">Left</option><option value="center">Center</option><option value="right">Right</option></select>
+            <label class="check"><input type="checkbox" id="tool-bold" /> Bold</label>
+            <label class="check"><input type="checkbox" id="tool-big" /> Big</label>
+          </div>
+          <button class="btn btn--gold btn--full" id="btn-print-text" disabled style="margin-top:8px">Print Text</button>
+        </div>
+
+        <div class="card tool-card">
+          <h3>🗄️ Cash Drawer</h3>
+          <p>Send open-drawer command. Only works with ESC/POS printers that have a connected drawer.</p>
+          <button class="btn btn--amber btn--full" id="btn-open-drawer" disabled>Open Cash Drawer</button>
+        </div>
+
+        <div class="card tool-card">
+          <h3>📊 Send Raw Bytes</h3>
+          <textarea id="tool-raw" rows="2" placeholder="1B 40 48 65 6C 6C 6F 0A (hex bytes)"></textarea>
+          <button class="btn btn--outline btn--full" id="btn-send-raw" disabled style="margin-top:8px">Send Raw</button>
+        </div>
+
+        <div class="card tool-card">
+          <h3>🔍 Diagnostics</h3>
+          <pre class="diag-output" id="diag-output">Connect a printer to view diagnostics.</pre>
+          <button class="btn btn--outline btn--full" id="btn-diag" disabled style="margin-top:8px">Refresh Diagnostics</button>
+        </div>
+
+        <div class="card tool-card">
+          <h3>📋 Event Log</h3>
+          <div class="event-log" id="event-log"></div>
+          <button class="btn btn--outline btn--full" id="btn-clear-log" style="margin-top:8px">Clear Log</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- TAB: DOCS -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <section class="panel" id="panel-docs" style="display:none">
+      <div class="panel__header">
+        <h2>Quick Reference</h2>
+        <p>Copy-paste integration examples for your project.</p>
+      </div>
+
+      <div class="docs-grid">
+        <div class="card">
+          <h3 class="card__title">Install</h3>
+          <div class="code-block">
+            <code>npm install ble-pos-printer</code>
+            <button class="copy-btn" data-copy="npm install ble-pos-printer">Copy</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="card__title">ESM Import</h3>
+          <div class="code-block"><pre><code>import PrinterManager from 'ble-pos-printer';
+
+const printer = new PrinterManager({
+  storeName: 'MY STORE',
+  paperWidth: 80,
+  commandMode: 'auto',
+});
+
+await printer.connect();
+await printer.printTest();</code></pre>
+            <button class="copy-btn" data-copy="import PrinterManager from 'ble-pos-printer';\n\nconst printer = new PrinterManager({\n  storeName: 'MY STORE',\n  paperWidth: 80,\n});\n\nawait printer.connect();\nawait printer.printTest();">Copy</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="card__title">Script Tag / CDN</h3>
+          <div class="code-block"><pre><code>&lt;script src="https://unpkg.com/ble-pos-printer/dist/printer-manager.min.js"&gt;&lt;/script&gt;
+&lt;script&gt;
+  const printer = new PrinterManager({ storeName: 'MY STORE' });
+&lt;/script&gt;</code></pre>
+            <button class="copy-btn" data-copy='<script src="https://unpkg.com/ble-pos-printer/dist/printer-manager.min.js"></script>'>Copy</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="card__title">Print Receipt</h3>
+          <div class="code-block"><pre><code>await printer.printReceipt({
+  invoiceNumber: 'INV-001',
+  date: new Date(),
+  cashier: 'Admin',
+  items: [{
+    name: 'Gold Ring 24K',
+    qty: 1, weight: 5.0,
+    karat: '24K',
+    pricePerGram: 1100000,
+  }],
+  paymentMethod: 'cash',
+  amountPaid: 6000000,
+});</code></pre>
+            <button class="copy-btn" data-copy="await printer.printReceipt({ ... });">Copy</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="card__title">Detection API</h3>
+          <div class="code-block"><pre><code>// Get available tests
+const tests = PrinterManager.getDetectionTests();
+
+// Run a single test
+await printer.runDetectionTest('escpos_full');
+
+// Save result (persists per device)
+printer.saveDetectionResult('escpos_full', {
+  paperWidth: 80,
+  autoCut: true,
+});</code></pre>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="card__title">Backend Sync (Any Framework)</h3>
+          <div class="code-block"><pre><code>const printer = new PrinterManager({
+  apiEndpoint: '/api/printer_profiles',
+  apiHeaders: {
+    'X-CSRF-Token': document.querySelector(
+      'meta[name=csrf-token]'
+    ).content,
+  },
+});
+
+// REST contract:
+// GET    /api/printer_profiles       → list all
+// PUT    /api/printer_profiles/:id   → upsert
+// DELETE /api/printer_profiles/:id   → delete</code></pre>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="card__title">Events</h3>
+          <div class="code-block"><pre><code>printer.on('connected', (d) =&gt; {
+  console.log('Device:', d.device);
+  console.log('Mode:', d.commandMode);
+  console.log('Has profile:', d.hasProfile);
+});
+
+printer.on('printEnd', (d) =&gt; {
+  console.log('Print OK:', d.type);
+});
+
+printer.on('error', (d) =&gt; {
+  console.error(d.type, d.error);
+});</code></pre>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="card__title">React Hook</h3>
+          <div class="code-block"><pre><code>import { useEffect, useRef, useState } from 'react';
+import PrinterManager from 'ble-pos-printer';
+
+export function usePrinter(opts = {}) {
+  const pm = useRef(null);
+  const [connected, setConnected] = useState(false);
+
+  useEffect(() =&gt; {
+    pm.current = new PrinterManager(opts);
+    pm.current.on('connected', () =&gt; setConnected(true));
+    pm.current.on('disconnected', () =&gt; setConnected(false));
+    return () =&gt; pm.current?.disconnect();
+  }, []);
+
+  return { printer: pm.current, connected };
+}</code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container">
+      <p>Built for BLE thermal printers · ESC/POS · TSPL · Web Bluetooth API</p>
+      <p class="footer__note">Requires Chrome 56+ or Edge 79+ · Not supported in Firefox/Safari</p>
+    </div>
+  </footer>
+
+  <script type="module" src="/main.js"></script>
+</body>
+</html>
