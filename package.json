@@ -16,15 +16,15 @@
     "xprinter",
     "gold-shop"
   ],
-  "author": "GoldPOS",
+  "author": "Ashurali",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/YOUR_USERNAME/ble-pos-printer.git"
+    "url": "https://github.com/Ashurali/ble-pos-printer.git"
   },
-  "homepage": "https://github.com/YOUR_USERNAME/ble-pos-printer#readme",
+  "homepage": "https://github.com/Ashurali/ble-pos-printer#readme",
   "bugs": {
-    "url": "https://github.com/YOUR_USERNAME/ble-pos-printer/issues"
+    "url": "https://github.com/Ashurali/ble-pos-printer/issues"
   },
   "main": "dist/printer-manager.umd.js",
   "module": "dist/printer-manager.esm.js",
