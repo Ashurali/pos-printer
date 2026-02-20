@@ -3,7 +3,7 @@
 
 /**
  * ============================================================================
- * GoldPOS Printer Manager v3.0.0
+ * BLE POS Printer Manager v3.0.1
  * ============================================================================
  * Backend-agnostic Bluetooth thermal printer manager.
  * Features:
@@ -90,7 +90,7 @@
     connectDelay: 500, writeRetries: 2,
 
     // Persistence
-    storageKey: "goldpos_printer",
+    storageKey: "blepos_printer",
     // REST API endpoint for backend sync (optional)
     // e.g. "/api/printer_profiles" — set to null to disable
     apiEndpoint: null,
@@ -146,7 +146,7 @@
    * ═══════════════════════════════════════════════════════════════════════ */
   class DeviceStore {
     constructor(storageKey, apiEndpoint, apiHeaders) {
-      this._key = storageKey || "goldpos_printer";
+      this._key = storageKey || "blepos_printer";
       this._api = apiEndpoint || null;
       this._headers = apiHeaders || {};
     }
@@ -512,7 +512,7 @@
       switch (testId) {
         case "raw":
           await this._sendText(
-            `TEST: RAW [${uid}]\r\nHello from GoldPOS\r\nRp 1.500.000\r\n2.50g 24K\r\n---\r\n\r\n\r\n`
+            `TEST: RAW [${uid}]\r\nHello from BLEPOS\r\nRp 1.500.000\r\n2.50g 24K\r\n---\r\n\r\n\r\n`
           );
           break;
 
@@ -520,7 +520,7 @@
           await this._send(this._build(
             CMD.INIT,
             `TEST: ESCPOS BASIC [${uid}]\n`,
-            "Hello from GoldPOS\n",
+            "Hello from BLEPOS\n",
             "Rp 1.500.000\n",
             CMD.FEED_LINES(3)
           ));
@@ -580,7 +580,7 @@
             `SIZE 100 mm, 50 mm\r\n` +
             `GAP 2 mm, 0 mm\r\nDIRECTION 1\r\nDENSITY 8\r\nCLS\r\n` +
             `TEXT 30,15,"4",0,1,1,"TEST: TSPL [${uid}]"\r\n` +
-            `TEXT 30,50,"3",0,1,1,"Hello from GoldPOS"\r\n` +
+            `TEXT 30,50,"3",0,1,1,"Hello from BLEPOS"\r\n` +
             `TEXT 30,80,"3",0,1,1,"Rp 1.500.000"\r\n` +
             `BAR 30,115,740,2\r\n` +
             `TEXT 30,125,"2",0,1,1,"If you see this AS FORMATTED LABEL, TSPL works"\r\n` +

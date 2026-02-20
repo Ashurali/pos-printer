@@ -1,5 +1,5 @@
 /**
- * GoldPOS Printer Setup UI v2.0.0 — Detection wizard + device profiles
+ * BLEPOS Printer Setup UI v2.0.0 — Detection wizard + device profiles
  * @license MIT
  */
 (function(root,factory){
@@ -226,7 +226,7 @@ class PrinterSetup{
     const d=this.pm.getDiagnostics();
     this._log("info","=== DIAGNOSTICS ===");
     for(const[k,v]of Object.entries(d))this._log("info",`${k}: ${JSON.stringify(v)}`);
-    console.log("[GoldPOS]",d);
+    console.log("[BLEPOS]",d);
   }
 
   /* ─── Detection Wizard ──────────────────────────────────────────── */
