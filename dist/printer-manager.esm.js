@@ -1,5 +1,5 @@
 // ESM build of printer-manager — auto-generated from UMD source
-// Import: import PrinterManager from 'pos-printer/printer-manager';
+// Import: import PrinterManager from 'ble-pos-printer/printer-manager';
 
 /**
  * ============================================================================

@@ -1,4 +1,4 @@
-// Type declarations for pos-printer/printer-manager
+// Type declarations for ble-pos-printer/printer-manager
 
 export interface PrinterConfig {
   commandMode: 'auto' | 'escpos' | 'tspl';

@@ -1,4 +1,4 @@
-# pos-printer
+# ble-pos-printer
 
 Backend-agnostic **Bluetooth thermal/label printer manager** for POS systems.
 
@@ -17,14 +17,14 @@ Connect to BLE receipt/label printers directly from the browser using Web Blueto
 ## Install
 
 ```bash
-npm install pos-printer
+npm install ble-pos-printer
 ```
 
 Or via CDN:
 
 ```html
-<script src="https://unpkg.com/pos-printer/dist/printer-manager.umd.js"></script>
-<script src="https://unpkg.com/pos-printer/dist/printer-setup.umd.js"></script>
+<script src="https://unpkg.com/ble-pos-printer/dist/printer-manager.umd.js"></script>
+<script src="https://unpkg.com/ble-pos-printer/dist/printer-setup.umd.js"></script>
 ```
 
 ## Quick Start
@@ -32,7 +32,7 @@ Or via CDN:
 ### ESM (Vite, webpack, Rollup)
 
 ```javascript
-import PrinterManager from 'pos-printer';
+import PrinterManager from 'ble-pos-printer';
 
 const printer = new PrinterManager({
   storeName: 'TOKO EMAS JAYA',
@@ -47,7 +47,7 @@ await printer.printTest();
 ### Script Tag (Vanilla, Rails, Laravel Blade)
 
 ```html
-<script src="https://unpkg.com/pos-printer/dist/printer-manager.umd.js"></script>
+<script src="https://unpkg.com/ble-pos-printer/dist/printer-manager.umd.js"></script>
 <script>
   const printer = new PrinterManager({ storeName: 'MY SHOP' });
   document.getElementById('btn').onclick = async () => {
@@ -64,8 +64,8 @@ Drop-in configuration panel with detection wizard, device profiles, and all sett
 ```html
 <div id="printer-setup"></div>
 
-<script src="https://unpkg.com/pos-printer/dist/printer-manager.umd.js"></script>
-<script src="https://unpkg.com/pos-printer/dist/printer-setup.umd.js"></script>
+<script src="https://unpkg.com/ble-pos-printer/dist/printer-manager.umd.js"></script>
+<script src="https://unpkg.com/ble-pos-printer/dist/printer-setup.umd.js"></script>
 <script>
   const setup = new PrinterSetup('#printer-setup', null, {
     theme: 'dark',
@@ -184,7 +184,7 @@ const printer = new PrinterManager({
 
 ```ruby
 # config/importmap.rb
-pin "pos-printer", to: "https://unpkg.com/pos-printer/dist/printer-manager.umd.js"
+pin "ble-pos-printer", to: "https://unpkg.com/ble-pos-printer/dist/printer-manager.umd.js"
 ```
 
 ```javascript
@@ -284,12 +284,12 @@ end
 **With Vite:**
 
 ```bash
-npm install pos-printer
+npm install ble-pos-printer
 ```
 
 ```javascript
 // resources/js/printer.js
-import PrinterManager from 'pos-printer';
+import PrinterManager from 'ble-pos-printer';
 
 window.printer = new PrinterManager({
   apiEndpoint: '/api/printer-profiles',
@@ -307,7 +307,7 @@ window.printer = new PrinterManager({
 
 @vite(['resources/js/printer.js'])
 <script type="module">
-  import PrinterSetup from 'pos-printer/setup';
+  import PrinterSetup from 'ble-pos-printer/setup';
   new PrinterSetup('#printer-setup', window.printer, { theme: 'dark' });
 </script>
 ```
@@ -370,7 +370,7 @@ Schema::create('printer_profiles', function (Blueprint $table) {
 
 ```jsx
 import { useEffect, useRef, useState } from 'react';
-import PrinterManager from 'pos-printer';
+import PrinterManager from 'ble-pos-printer';
 
 export function usePrinter(opts = {}) {
   const pmRef = useRef(null);
