@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Build script for goldpos-printer.
+ * Build script for pos-printer.
  * Creates UMD, ESM, and minified bundles in dist/.
  * Run: node scripts/build.js
  */
@@ -67,7 +67,7 @@ function createESM(name, umdSource) {
   // The UMD source uses: (function(root, factory) { ... })(self, function() { ... return CLASS; });
   // We extract the factory body and wrap it as ESM.
   return `// ESM build of ${name} — auto-generated from UMD source
-// Import: import PrinterManager from 'goldpos-printer/${name}';
+// Import: import PrinterManager from 'pos-printer/${name}';
 
 ${umdSource}
 
@@ -79,7 +79,7 @@ export default _export;
 
 // ─── TypeScript Declarations ───
 
-function getTypesManager() { return `// Type declarations for goldpos-printer/printer-manager
+function getTypesManager() { return `// Type declarations for pos-printer/printer-manager
 
 export interface PrinterConfig {
   commandMode: 'auto' | 'escpos' | 'tspl';
@@ -266,7 +266,7 @@ declare class PrinterManager {
 export default PrinterManager;
 `; }
 
-function getTypesSetup() { return `// Type declarations for goldpos-printer/printer-setup
+function getTypesSetup() { return `// Type declarations for pos-printer/printer-setup
 import PrinterManager from './printer-manager';
 
 export interface SetupOptions {

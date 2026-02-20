@@ -1,5 +1,5 @@
 {
-  "name": "goldpos-printer",
+  "name": "pos-printer",
   "version": "3.0.0",
   "description": "Backend-agnostic Bluetooth thermal/label printer manager for POS systems. Supports ESC/POS and TSPL with auto-detection, device profiles, and BLE chunked writes.",
   "keywords": [
@@ -20,11 +20,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/YOUR_USERNAME/goldpos-printer.git"
+    "url": "https://github.com/YOUR_USERNAME/pos-printer.git"
   },
-  "homepage": "https://github.com/YOUR_USERNAME/goldpos-printer#readme",
+  "homepage": "https://github.com/YOUR_USERNAME/pos-printer#readme",
   "bugs": {
-    "url": "https://github.com/YOUR_USERNAME/goldpos-printer/issues"
+    "url": "https://github.com/YOUR_USERNAME/pos-printer/issues"
   },
   "main": "dist/printer-manager.umd.js",
   "module": "dist/printer-manager.esm.js",

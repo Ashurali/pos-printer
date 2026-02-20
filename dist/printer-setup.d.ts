@@ -1,4 +1,4 @@
-// Type declarations for goldpos-printer/printer-setup
+// Type declarations for pos-printer/printer-setup
 import PrinterManager from './printer-manager';
 
 export interface SetupOptions {

@@ -1,5 +1,5 @@
 // ESM build of printer-setup — auto-generated from UMD source
-// Import: import PrinterManager from 'goldpos-printer/printer-setup';
+// Import: import PrinterManager from 'pos-printer/printer-setup';
 
 /**
  * GoldPOS Printer Setup UI v2.0.0 — Detection wizard + device profiles
