@@ -18,7 +18,7 @@ globalThis.localStorage = {
 try { Object.defineProperty(globalThis, 'navigator', { value: { bluetooth: null }, configurable: true }); } catch {};
 
 // Import ESM build
-import PrinterManager from "../dist/printer-manager.esm.js";
+import PrinterManager from "../dist/printer-manager.esm.mjs";
 
 describe("ESM import", () => {
   it("default export is a constructor function", () => {

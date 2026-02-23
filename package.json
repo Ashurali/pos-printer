@@ -27,17 +27,17 @@
     "url": "https://github.com/Ashurali/ble-pos-printer/issues"
   },
   "main": "dist/printer-manager.umd.js",
-  "module": "dist/printer-manager.esm.js",
+  "module": "dist/printer-manager.esm.mjs",
   "browser": "dist/printer-manager.umd.js",
   "types": "dist/printer-manager.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/printer-manager.esm.js",
+      "import": "./dist/printer-manager.esm.mjs",
       "require": "./dist/printer-manager.umd.js",
       "default": "./dist/printer-manager.umd.js"
     },
     "./setup": {
-      "import": "./dist/printer-setup.esm.js",
+      "import": "./dist/printer-setup.esm.mjs",
       "require": "./dist/printer-setup.umd.js",
       "default": "./dist/printer-setup.umd.js"
     }

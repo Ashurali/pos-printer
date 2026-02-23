@@ -34,23 +34,23 @@ jobs:
       - name: Verify dist files exist
         run: |
           test -f dist/printer-manager.umd.js
-          test -f dist/printer-manager.esm.js
+          test -f dist/printer-manager.esm.mjs
           test -f dist/printer-manager.min.js
           test -f dist/printer-manager.d.ts
           test -f dist/printer-setup.umd.js
-          test -f dist/printer-setup.esm.js
+          test -f dist/printer-setup.esm.mjs
           test -f dist/printer-setup.min.js
           test -f dist/printer-setup.d.ts
-          test -f dist/index.esm.js
+          test -f dist/index.esm.mjs
           echo "✅ All dist files present"
 
       - name: Verify ESM export pattern
         run: |
-          if grep -q "globalThis).PrinterManager" dist/printer-manager.esm.js; then
+          if grep -q "globalThis).PrinterManager" dist/printer-manager.esm.mjs; then
             echo "❌ ESM still uses broken globalThis pattern!"
             exit 1
           fi
-          if grep -q "_esmModule.exports" dist/printer-manager.esm.js; then
+          if grep -q "_esmModule.exports" dist/printer-manager.esm.mjs; then
             echo "✅ ESM uses correct module.exports capture"
           else
             echo "❌ ESM missing _esmModule.exports pattern"

@@ -34,14 +34,14 @@ describe("Build integrity", () => {
   const distDir = path.join(__dirname, "..", "dist");
   const expected = [
     "printer-manager.umd.js",
-    "printer-manager.esm.js",
+    "printer-manager.esm.mjs",
     "printer-manager.min.js",
     "printer-manager.d.ts",
     "printer-setup.umd.js",
-    "printer-setup.esm.js",
+    "printer-setup.esm.mjs",
     "printer-setup.min.js",
     "printer-setup.d.ts",
-    "index.esm.js",
+    "index.esm.mjs",
   ];
 
   for (const file of expected) {
@@ -60,7 +60,7 @@ describe("Build integrity", () => {
 
   it("ESM file uses module.exports capture pattern (not globalThis)", () => {
     const esm = fs.readFileSync(
-      path.join(distDir, "printer-manager.esm.js"),
+      path.join(distDir, "printer-manager.esm.mjs"),
       "utf-8"
     );
     assert.ok(
@@ -79,7 +79,7 @@ describe("Build integrity", () => {
 
   it("Setup ESM file uses module.exports capture pattern", () => {
     const esm = fs.readFileSync(
-      path.join(distDir, "printer-setup.esm.js"),
+      path.join(distDir, "printer-setup.esm.mjs"),
       "utf-8"
     );
     assert.ok(

@@ -25,16 +25,16 @@ for (const name of files) {
 
   // ESM: extract factory and re-export as default
   const esm = createESM(name, source);
-  fs.writeFileSync(path.join(dist, `${name}.esm.js`), esm);
-  console.log(`✅ dist/${name}.esm.js`);
+  fs.writeFileSync(path.join(dist, `${name}.esm.mjs`), esm);
+  console.log(`✅ dist/${name}.esm.mjs`);
 }
 
 // ─── Create ESM index ───
-const indexESM = `export { default as PrinterManager } from './printer-manager.esm.js';
-export { default as PrinterSetup } from './printer-setup.esm.js';
+const indexESM = `export { default as PrinterManager } from './printer-manager.esm.mjs';
+export { default as PrinterSetup } from './printer-setup.esm.mjs';
 `;
-fs.writeFileSync(path.join(dist, "index.esm.js"), indexESM);
-console.log("✅ dist/index.esm.js");
+fs.writeFileSync(path.join(dist, "index.esm.mjs"), indexESM);
+console.log("✅ dist/index.esm.mjs");
 
 // ─── Create TypeScript declarations ───
 fs.writeFileSync(path.join(dist, "printer-manager.d.ts"), getTypesManager());
